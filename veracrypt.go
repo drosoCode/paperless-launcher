@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path"
 	"strings"
 )
 
@@ -14,14 +13,14 @@ func getMountPath(user string) string {
 	return strings.Replace(config.MountPath, "%user%", user, -1)
 }
 
-func mount(user string, password string) error {
+func mount(user string, password string) (string, string, error) {
 	mapping := map[string]string{}
 
 	// check that mount path exists
 	mnt := getMountPath(user)
 	if _, err := os.Stat(mnt); os.IsNotExist(err) {
 		if err := os.MkdirAll(mnt, 0755); err != nil {
-			return err
+			return "", "", err
 		}
 	}
 
@@ -38,14 +37,14 @@ func mount(user string, password string) error {
 		if _, err := os.Stat(path); err != nil {
 			// if volume does not exists, create it
 			if !config.EnableRegistration {
-				return errors.New("registration is disabled")
+				return "", "", errors.New("registration is disabled")
 			}
 			err := createVeracryptVolume(path, password)
 			if err != nil {
-				return err
+				return "", "", err
 			}
 		}
-		return mountVeracryptVolume(path, mnt, password)
+		return path, mnt, mountVeracryptVolume(path, mnt, password)
 	}
 
 	// else, default to config.DataPath
@@ -54,25 +53,21 @@ func mount(user string, password string) error {
 	// if volume does not exists, create it
 	if _, err := os.Stat(dataPath); err != nil {
 		if !config.EnableRegistration {
-			return errors.New("registration is disabled")
+			return "", "", errors.New("registration is disabled")
 		}
 		err := createVeracryptVolume(dataPath, password)
 		if err != nil {
-			return err
+			return "", "", err
 		}
 	}
 
-	return mountVeracryptVolume(dataPath, mnt, password)
+	return dataPath, mnt, mountVeracryptVolume(dataPath, mnt, password)
 }
 
-func unmount(user string) error {
-	data, ok := users[user]
-	if ok {
-		log.Println("unmounting volume")
-		cmd := exec.Command("/bin/sh", "-c", "cd "+path.Dir(data.MountPath)+" && veracrypt -d "+path.Base(data.MountPath))
-		return cmd.Run()
-	}
-	return nil
+func unmount(volumePath string) error {
+	log.Println("unmounting volume")
+	cmd := exec.Command("veracrypt", "-d", volumePath)
+	return cmd.Run()
 }
 
 func mountVeracryptVolume(volumePath string, mountPath string, password string) error {
@@ -89,18 +84,28 @@ func mountVeracryptVolume(volumePath string, mountPath string, password string) 
 
 func createVeracryptVolume(volumePath string, password string) error {
 	log.Println("creating volume")
-	cmd := exec.Command("veracrypt", "-m=nokernelcrypto", "--create", "--volume-type=normal", "--size=1G", "--encryption=AES", "--hash=SHA-512", "--filesystem=Ext4", "--pim=0", "-k", "", "--random-source=/dev/urandom", "--non-interactive", "--stdin", volumePath)
+	// create volume
+	cmd := exec.Command("veracrypt", "--create", "--volume-type=normal", "--size="+config.DefaultVolumeSize, "--encryption=AES", "--hash=SHA-512", "--filesystem=none", "--pim=0", "-k", "", "--random-source=/dev/urandom", "--non-interactive", "--stdin", volumePath)
 	cmd.Stdin = strings.NewReader(password)
 	data, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Printf("ERROR: %s", string(data))
 		return err
 	}
-	cmd = exec.Command("/bin/sh", "-c", "chown 0:100 "+volumePath)
+	// mount volume with empty fs
+	cmd = exec.Command("veracrypt", "-m=nokernelcrypto", "--non-interactive", "--filesystem=none", "--pim=0", "-k", "", "--protect-hidden=no", "--stdin", volumePath)
+	cmd.Stdin = strings.NewReader(password)
 	data, err = cmd.CombinedOutput()
 	if err != nil {
 		log.Printf("ERROR: %s", string(data))
 		return err
 	}
-	return nil
+	// create fs
+	cmd = exec.Command("mkfs.ext4", "/tmp/.veracrypt_aux_mnt1/volume")
+	data, err = cmd.CombinedOutput()
+	if err != nil {
+		log.Printf("ERROR: %s", string(data))
+	}
+	// unmount
+	return unmount(volumePath)
 }

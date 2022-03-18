@@ -16,6 +16,7 @@ type User struct {
 	DockerRedis     string
 	Timeout         *time.Timer
 	MountPath       string
+	VolumePath      string
 }
 
 type Config struct {

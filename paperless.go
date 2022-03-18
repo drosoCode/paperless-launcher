@@ -78,7 +78,7 @@ func getUnusedPort(user string) int {
 	return -1
 }
 
-func spawnPaperless(mountPath string, user string, password string, email string) (User, error) {
+func spawnPaperless(volumePath string, mountPath string, user string, password string, email string) (User, error) {
 	killPaperless(user)
 
 	redis := "pll_" + user + "_redis"
@@ -135,5 +135,5 @@ func spawnPaperless(mountPath string, user string, password string, email string
 		logoutUser(user)
 	})
 
-	return User{Port: port, DockerNetwork: network, DockerPaperless: paperless, DockerRedis: redis, Timeout: timeout, MountPath: mountPath}, nil
+	return User{Port: port, DockerNetwork: network, DockerPaperless: paperless, DockerRedis: redis, Timeout: timeout, VolumePath: volumePath, MountPath: mountPath}, nil
 }

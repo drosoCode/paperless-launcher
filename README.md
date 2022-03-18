@@ -12,7 +12,7 @@ Then run `docker-compose up -d` to start the container.
 |serve|PLL_SERVE|0.0.0.0:3000|the bind address of the server|
 |user-header|PLL_USER_HEADER|Remote-User|the header used to authenticate the user|
 |email-header|PLL_EMAIL_HEADER|Remote-Email|the header that contains the user's email address|
-|registration|PLL_REGISTRATION|false|Enable auto creation of volumes for new users (CURRENTLY NOT AVAILABLE)|
+|registration|PLL_REGISTRATION|false|Enable auto creation of volumes for new users|
 |size|PLL_SIZE|2G|The default size of a veracrypt volume for the auto creation|
 |mount-path|PLL_MOUNT_PATH|/app/mount/%user%|the path where the veracrypt volume will be mounted, `%user%` will be repaced by the username
 |volume-path|PLL_VOLUME_PATH|/data/%user%.hc|the path to the veracrypt volume for a specific user, this can be overwritten in the `mappings.json` file with `"youruser": "yourpath"`|

@@ -76,17 +76,17 @@ func login(w http.ResponseWriter, r *http.Request) {
 	// if volume is not mounted
 	if _, ok := users[user]; !ok && user != "" && password != "" {
 		processMutex.Lock()
-		err := mount(user, password)
+		volumePath, mountPath, err := mount(user, password)
 		if err != nil {
 			log.Printf("ERROR: %s", err.Error())
 			http.Redirect(w, r, "/", 302)
 			processMutex.Unlock()
 			return
 		}
-		userData, err := spawnPaperless(getMountPath(user), user, password, email)
+		userData, err := spawnPaperless(volumePath, mountPath, user, password, email)
 		if err != nil {
 			log.Printf("ERROR: %s", err.Error())
-			unmount(user)
+			unmount(volumePath)
 			http.Redirect(w, r, "/", 302)
 			processMutex.Unlock()
 			return
@@ -128,7 +128,7 @@ func logoutUser(user string) {
 		if err != nil {
 			log.Printf("ERROR: %s", err.Error())
 		}
-		err = unmount(user)
+		err = unmount(data.VolumePath)
 		if err != nil {
 			log.Printf("ERROR: %s", err.Error())
 		}
