@@ -6,7 +6,9 @@ services:
     devices:
       - /dev/fuse
     volumes:
-        - /path/to/your/volumes/dir/:/data
+      - /path/to/your/volumes/dir/:/data
+    environment:
+      PLL_REGISTRATION: 'true'
     labels:
         - traefik.http.routers.paperless.rule=Host(`paperless.domain.tld`)
         - traefik.http.routers.paperless.tls=true

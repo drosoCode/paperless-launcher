@@ -39,7 +39,7 @@ func parseConfig() Config {
 	serve := flag.String("serve", "0.0.0.0:3000", "bind address")
 	remoteUser := flag.String("user-header", "Remote-User", "name of the user header")
 	remoteEmail := flag.String("email-header", "Remote-Email", "name of the email header")
-	//registration := flag.Bool("registration", false, "enable registration")
+	registration := flag.Bool("registration", false, "enable registration")
 	size := flag.String("size", "2G", "size of the new volumes")
 	mountPath := flag.String("mount-path", "./mount/%user%", "path to mount the veracrypt volumes, use %user% to replace by the username")
 	volumePath := flag.String("volume-path", "./volumes/%user%.vc", "default path to create new volumes, use %user% to replace by the username")
@@ -57,7 +57,7 @@ func parseConfig() Config {
 		Serve:              *serve,
 		RemoteUserHeader:   *remoteUser,
 		RemoteEmailHeader:  *remoteEmail,
-		EnableRegistration: false,
+		EnableRegistration: *registration,
 		DefaultVolumeSize:  *size,
 		MountPath:          *mountPath,
 		VolumePath:         *volumePath,
